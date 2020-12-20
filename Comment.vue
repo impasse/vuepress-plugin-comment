@@ -23,7 +23,7 @@ export default {
       clear() && needComment(frontmatter) && renderComment(frontmatter)
     }, 1000)
 
-    this.$router.afterEach((to, from, next) => {
+    this.$router.beforeEach((to, from, next) => {
       if (to && from && to.path === from.path) {
         return
       }
