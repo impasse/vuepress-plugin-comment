@@ -6,6 +6,7 @@
 import { provider, renderConfig, loadScript } from "./util";
 
 const commentDomID = "vuepress-plugin-comment";
+let timer;
 
 export default {
   mounted() {
@@ -25,6 +26,7 @@ export default {
         from,
         ...this.$frontmatter,
       };
+      clearInterval(timer);
       clear() &&
         needComment(frontmatter) &&
         checkAndRenderComments(frontmatter).then(console.log);
@@ -60,7 +62,7 @@ function needComment(frontmatter) {
 function checkElement(selector, interval = 200, times = 10) {
   return new Promise((resolve) => {
     let el;
-    const timer = setInterval(() => {
+    setInterval(() => {
       if (--times > 0) {
         el = document.querySelector(selector);
         if (el) {
