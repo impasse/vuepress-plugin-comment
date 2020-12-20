@@ -3,88 +3,94 @@
 </template>
 
 <script>
-import {
-  provider,
-  renderConfig,
-  loadScript,
-} from './util'
+import { provider, renderConfig, loadScript } from "./util";
 
-const commentDomID = 'vuepress-plugin-comment' 
-let timer = null
+const commentDomID = "vuepress-plugin-comment";
 
 export default {
-  mounted () {
-    timer = setTimeout(() => {
-      const frontmatter = {
-        to: {},
-        from: {},
-        ...this.$frontmatter
-      }
-      clear() && needComment(frontmatter) && renderComment(frontmatter)
-    }, 1000)
+  mounted() {
+    const frontmatter = {
+      to: {},
+      from: {},
+      ...this.$frontmatter,
+    };
+    clear() && needComment(frontmatter) && checkAndRenderComments(frontmatter);
 
-    this.$router.beforeEach((to, from, next) => {
+    this.$router.afterEach((to, from) => {
       if (to && from && to.path === from.path) {
-        return
+        return;
       }
       const frontmatter = {
         to,
         from,
-        ...this.$frontmatter
-      }
-      clear() && needComment(frontmatter) && renderComment(frontmatter)
-      next()
-    })
-  }
-}
+        ...this.$frontmatter,
+      };
+      clear() &&
+        needComment(frontmatter) &&
+        checkAndRenderComments(frontmatter).then(console.log);
+    });
+  },
+};
 
 /**
  * Clear last page comment dom
  */
-function clear (frontmatter) {
+function clear(frontmatter) {
   switch (COMMENT_CHOOSEN) {
-    case 'gitalk': 
-      return provider.gitalk.clear(commentDomID)
-    case 'valine': 
-      let el = COMMENT_OPTIONS.el || commentDomID
-      if (el.startsWith('#')) {
-        el = el.slice(1)
+    case "gitalk":
+      return provider.gitalk.clear(commentDomID);
+    case "valine":
+      let el = COMMENT_OPTIONS.el || commentDomID;
+      if (el.startsWith("#")) {
+        el = el.slice(1);
       }
-      console.log(el)
-      return provider.valine.clear(el)
-    default: return false
+      return provider.valine.clear(el);
+    default:
+      return false;
   }
 }
 
 /**
  * Check if current page needs render comment
  */
-function needComment (frontmatter) {
-  return frontmatter.comment !== false && frontmatter.comments !== false
+function needComment(frontmatter) {
+  return frontmatter.comment !== false && frontmatter.comments !== false;
 }
 
-/**
- * Render comment dom and append it to container
- */
-function renderComment (frontmatter) {
-  clearTimeout(timer)
-
-  const parentDOM = document.querySelector(COMMENT_CONTAINER)
-  if (!parentDOM) {
-    timer = setTimeout(() => renderComment(frontmatter), 200)
-    return 
-  }
-
-  switch (COMMENT_CHOOSEN) {
-    case 'gitalk': 
-      return provider.gitalk.render(frontmatter, commentDomID)
-    case 'valine': 
-      let el = COMMENT_OPTIONS.el || commentDomID
-      if (el.startsWith('#')) {
-        el = el.slice(1)
+function checkElement(selector, interval = 200, times = 10) {
+  return new Promise((resolve) => {
+    let el;
+    const timer = setInterval(() => {
+      if (--times > 0) {
+        el = document.querySelector(selector);
+        if (el) {
+          clearInterval(timer);
+          resolve(el);
+        }
+      } else {
+        clearInterval(timer);
+        resolve();
       }
-      return provider.valine.render(frontmatter, el)
-    default: return false
-  }
+    }, interval);
+  });
+}
+
+function checkAndRenderComments(frontmatter) {
+  return checkElement(COMMENT_CONTAINER).then((el) => {
+    if (el) {
+      switch (COMMENT_CHOOSEN) {
+        case "gitalk":
+          return provider.gitalk.render(frontmatter, commentDomID);
+        case "valine":
+          let el = COMMENT_OPTIONS.el || commentDomID;
+          if (el.startsWith("#")) {
+            el = el.slice(1);
+          }
+          return provider.valine.render(frontmatter, el);
+        default:
+          return false;
+      }
+    }
+  });
 }
 </script>
