@@ -26,7 +26,6 @@ export default {
         from,
         ...this.$frontmatter,
       };
-      clearInterval(timer);
       clear() &&
         needComment(frontmatter) &&
         checkAndRenderComments(frontmatter).then(console.log);
@@ -38,6 +37,7 @@ export default {
  * Clear last page comment dom
  */
 function clear(frontmatter) {
+  clearInterval(timer);
   switch (COMMENT_CHOOSEN) {
     case "gitalk":
       return provider.gitalk.clear(commentDomID);
@@ -62,7 +62,7 @@ function needComment(frontmatter) {
 function checkElement(selector, interval = 200, times = 10) {
   return new Promise((resolve) => {
     let el;
-    setInterval(() => {
+    timer = setInterval(() => {
       if (--times > 0) {
         el = document.querySelector(selector);
         if (el) {
